@@ -8,5 +8,8 @@ PHONY: dbuild
 dbuild:
 	docker build -t my-golang-app .
 PHONY: drun
-drun:
+drun: dbuild
 	docker run -p 8081:8081 my-golang-app
+PHONY: di
+di: dbuild
+	docker inspect my-golang-app

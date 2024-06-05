@@ -1,15 +1,15 @@
-FROM golang:latest AS builder
+FROM golang:1.22 AS builder
 
 WORKDIR /app
 
 COPY . .
 
-RUN go build -o main .
+RUN go mod download
+ 
+RUN go build -o api ./cmd/api/main.go
 
-FROM scratch
+FROM ubuntu:latest
 
-COPY --from=builder /app/main /app/main
+COPY --from=builder /app/api /app/api
 
-EXPOSE 8081
-
-CMD ["/app/main"]
+CMD [ "/app/api" ]

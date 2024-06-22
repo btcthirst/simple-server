@@ -1,18 +1,22 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"simple-server/internal/database"
 	"simple-server/internal/models"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
+var fakeStorage *database.FakeStorage
+
 func Init() {
 	fmt.Println("Init API")
 	addr := ":8081"
-
+	fakeStorage = database.New()
 	r := initRouter()
 
 	http.ListenAndServe(addr, r)
@@ -40,59 +44,75 @@ func handlerHello(w http.ResponseWriter, r *http.Request) {
 //////// Posts
 
 func handlerPosts(w http.ResponseWriter, r *http.Request) {
-	articles := []models.Article{
-		{
-			ID:          01,
-			Title:       "test ti",
-			Body:        "some lorem ipsum text",
-			Description: "a litle desc",
-			Author:      "dev",
-		},
-		{
-			ID:          02,
-			Title:       "test ti1",
-			Body:        "some1 lorem ipsum text",
-			Description: "a1 litle desc",
-			Author:      "dev",
-		},
+	articles, err := fakeStorage.Get()
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, err)
+		return
 	}
 	writeJSON(w, http.StatusOK, articles)
 }
 
 func handlerPost(w http.ResponseWriter, r *http.Request) {
-	article := models.Article{
-		ID:          01,
-		Title:       "test ti",
-		Body:        "some lorem ipsum text",
-		Description: "a litle desc",
-		Author:      "dev",
+	id, err := strToInt(mux.Vars(r)["id"])
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	article, err := fakeStorage.GetBy(id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, err)
+		return
 	}
 	writeJSON(w, http.StatusOK, article)
 }
 
 func handlerPostCreate(w http.ResponseWriter, r *http.Request) {
-	article := models.Article{
-		ID:          01,
-		Title:       "test ti",
-		Body:        "some lorem ipsum text",
-		Description: "a litle desc",
-		Author:      "dev",
+	article := models.ArticleDTO{}
+	err := json.NewDecoder(r.Body).Decode(&article)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	err = fakeStorage.Create(article)
+	if err != nil {
+		writeJSON(w, http.StatusForbidden, err)
+		return
 	}
 	writeJSON(w, http.StatusCreated, article)
 }
 
 func handlerPostUpdate(w http.ResponseWriter, r *http.Request) {
-	article := models.Article{
-		ID:          01,
-		Title:       "test ti",
-		Body:        "some lorem ipsum text",
-		Description: "a litle desc",
-		Author:      "dev",
+	id, err := strToInt(mux.Vars(r)["id"])
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	article := models.Article{}
+	err = json.NewDecoder(r.Body).Decode(&article)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	article.ID = id
+	article, err = fakeStorage.Update(article)
+	if err != nil {
+		writeJSON(w, http.StatusForbidden, err)
+		return
 	}
 	writeJSON(w, http.StatusOK, article)
 }
 
 func handlerPostDelete(w http.ResponseWriter, r *http.Request) {
+	id, err := strToInt(mux.Vars(r)["id"])
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	err = fakeStorage.Delete(id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, err)
+		return
+	}
 	res := models.Mess{
 		Message: "post deleted",
 	}

@@ -8,6 +8,13 @@ type Article struct {
 	Author      string `json:"author"`
 }
 
+type ArticleDTO struct {
+	Title       string `json:"title"`
+	Body        string `json:"body"`
+	Description string `json:"description"`
+	Author      string `json:"author"`
+}
+
 type Mess struct {
 	Message string `json:"message"`
 }
